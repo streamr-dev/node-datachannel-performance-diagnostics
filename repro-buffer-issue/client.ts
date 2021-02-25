@@ -1,12 +1,12 @@
 import * as nodeDataChannel from "node-datachannel"
 import * as WebSocket from "ws"
-import { DataChannel } from "node-datachannel"
+import { DataChannel, DataChannelInitConfig, ReliabilityType } from "node-datachannel"
 
 const ICE_SERVERS = ['stun:stun.l.google.com:19302']
 
 const BUFFER_LOW = 2 ** 20
 const BUFFER_HIGH = 2 ** 24
-const PACKAGE_SIZE = 600
+const PACKAGE_SIZE = 800
 const INTERVAL = 2
 
 function randomString(length: number): string {
@@ -69,7 +69,13 @@ class PeerConnection {
         if (this.dc) {
             throw new Error('Already started!')
         }
-        this.setUpDataChannel(this.connection.createDataChannel('generalDataChannel'))
+        const config = {
+            reliability: {
+                type: 1,
+                unordered: true
+            }
+        } as DataChannelInitConfig
+        this.setUpDataChannel(this.connection.createDataChannel('generalDataChannel', config))
         this.dc.onOpen(() => {
             this.paused = false
         })
