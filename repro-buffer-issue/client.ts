@@ -6,6 +6,8 @@ const ICE_SERVERS = ['stun:stun.l.google.com:19302']
 
 const BUFFER_LOW = 2 ** 20
 const BUFFER_HIGH = 2 ** 24
+const PACKAGE_SIZE = 600
+const INTERVAL = 2
 
 function randomString(length: number): string {
     let result = ''
@@ -15,6 +17,10 @@ function randomString(length: number): string {
         result += characters.charAt(Math.floor(Math.random() * charactersLength))
     }
     return result
+}
+
+function formatRate(bytes: number): string {
+    return `${Math.round(bytes / 1024)}`
 }
 
 class PeerConnection {
@@ -110,6 +116,10 @@ class PeerConnection {
         return this.logId
     }
 
+    getBufferedAmount(): number {
+        return this.dc ? this.dc.bufferedAmount() as number : 0
+    }
+
     getBytesIn(): number {
         return this.bytesIn
     }
@@ -181,24 +191,28 @@ export default function startClient(id: string, wsUrl: string) {
     })
 
     setInterval(() => {
-        const msg = randomString(300)
+        const msg = randomString(PACKAGE_SIZE)
         Object.values(connections).forEach((conn) => {
             conn.publish(msg)
         })
-    }, 5)
+    }, INTERVAL)
 
     setInterval(() => {
         let totalIn = 0
         let totalOut = 0
         let totalFailed = 0
+        let totalBufferedAmount = 0
+
         Object.values(connections).forEach((conn) => {
             totalIn += conn.getBytesIn()
             totalOut += conn.getBytesOut()
             totalFailed += conn.getBytesFailed()
-            console.info(`${conn.getLogId()} rate ${conn.getBytesIn() / 1024} / ${conn.getBytesOut() / 1024} kb/s (${conn.getBytesFailed()} failed bytes)`)
+            totalBufferedAmount += conn.getBufferedAmount()
+            console.info(`${conn.getLogId()} rate ${formatRate(conn.getBytesIn())} / ${formatRate(conn.getBytesOut())} kb/s`
+                + ` (${formatRate(conn.getBytesFailed())}, ${formatRate(conn.getBufferedAmount())})`)
             conn.resetCounters()
         })
-        console.info(`Total ${totalIn / 1024} / ${totalOut / 1024} kb/s (${totalFailed} failed bytes)`)
+        console.info(`Total ${formatRate(totalIn)} / ${formatRate(totalOut)} kb/s (${formatRate(totalFailed)}, ${formatRate(totalBufferedAmount)})\n`)
     }, 1000)
 }
 
