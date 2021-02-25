@@ -4,8 +4,8 @@
   "description": "",
   "main": "client.ts",
   "bin": {
-    "ndct-client": "client.ts",
-    "ndct-server": "signaling-server.ts"
+    "ndct-client": "client-bin.js",
+    "ndct-server": "server-bin.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
