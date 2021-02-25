@@ -26,6 +26,7 @@ class PeerConnection {
     private paused = true
     private bytesIn = 0
     private bytesOut = 0
+    private bytesFailed = 0
 
     constructor(selfId: string, peerId: string, signalingServerWs: WebSocket) {
         this.selfId = selfId
@@ -87,16 +88,20 @@ class PeerConnection {
 
     publish(message: string): boolean {
         if (this.paused) {
+            this.bytesFailed += message.length
             return false
         }
         if (this.dc.bufferedAmount() >= BUFFER_HIGH) {
             this.paused = true
             console.info(`${this.logId} DataChannel HIGH buffer (${this.dc.bufferedAmount()})!`)
+            this.bytesFailed += message.length
             return false
         }
         const success = this.dc.sendMessage(message)
         if (success) {
             this.bytesOut += message.length
+        } else {
+            this.bytesFailed += message.length
         }
         return success
     }
@@ -113,9 +118,14 @@ class PeerConnection {
         return this.bytesOut
     }
 
+    getBytesFailed(): number {
+        return this.bytesFailed
+    }
+
     resetCounters(): void {
         this.bytesIn = 0
         this.bytesOut = 0
+        this.bytesFailed = 0
     }
 
     private setUpDataChannel(dc: DataChannel): void {
@@ -171,7 +181,7 @@ export default function startClient(id: string, wsUrl: string) {
     })
 
     setInterval(() => {
-        const msg = randomString(600)
+        const msg = randomString(300)
         Object.values(connections).forEach((conn) => {
             conn.publish(msg)
         })
@@ -180,16 +190,18 @@ export default function startClient(id: string, wsUrl: string) {
     setInterval(() => {
         let totalIn = 0
         let totalOut = 0
+        let totalFailed = 0
         Object.values(connections).forEach((conn) => {
             totalIn += conn.getBytesIn()
             totalOut += conn.getBytesOut()
-            console.info(`${conn.getLogId()} rate ${conn.getBytesIn() / 1024} / ${conn.getBytesOut() / 1024} kb`)
+            totalFailed += conn.getBytesFailed()
+            console.info(`${conn.getLogId()} rate ${conn.getBytesIn() / 1024} / ${conn.getBytesOut() / 1024} kb/s (${conn.getBytesFailed()} failed bytes)`)
             conn.resetCounters()
         })
-        console.info(`Total ${totalIn / 1024} / ${totalOut / 1024} kb`)
+        console.info(`Total ${totalIn / 1024} / ${totalOut / 1024} kb/s (${totalFailed} failed bytes)`)
     }, 1000)
 }
 
-const WS_URL = "ws://localhost:8080/"
+const WS_URL = process.env.WS_URL || "ws://localhost:8080/"
 const clientArgs = process.argv.slice(2)
 startClient(clientArgs.length > 0 ? clientArgs[0] : 'client-' + randomString(4), WS_URL)
