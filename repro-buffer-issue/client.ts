@@ -30,6 +30,7 @@ class PeerConnection {
     private readonly connection: nodeDataChannel.PeerConnection
     private dc: nodeDataChannel.DataChannel | null
     private paused = true
+    private lastState = "unknown"
     private bytesIn = 0
     private bytesOut = 0
     private bytesFailed = 0
@@ -46,7 +47,9 @@ class PeerConnection {
             }))
         }
         this.connection = new nodeDataChannel.PeerConnection(selfId, { iceServers: ICE_SERVERS })
-        // TODO: connection.onStateChange
+        this.connection.onStateChange((state) => {
+            this.lastState = state
+        })
         // TODO: connection.onGatheringStateChange
         this.connection.onLocalDescription((description, type) => {
             sendRelay({
@@ -104,12 +107,8 @@ class PeerConnection {
             return false
         }
         const success = this.dc.sendMessage(message)
-        if (success) {
-            this.bytesOut += message.length
-        } else {
-            this.bytesFailed += message.length
-        }
-        return success
+        this.bytesOut += message.length
+        return true
     }
 
     getLogId(): string {
@@ -118,6 +117,10 @@ class PeerConnection {
 
     getBufferedAmount(): number {
         return this.dc ? this.dc.bufferedAmount() as number : 0
+    }
+
+    getState(): string {
+        return this.lastState
     }
 
     getBytesIn(): number {
@@ -209,7 +212,7 @@ export default function startClient(id: string, wsUrl: string) {
             totalFailed += conn.getBytesFailed()
             totalBufferedAmount += conn.getBufferedAmount()
             console.info(`${conn.getLogId()} rate ${formatRate(conn.getBytesIn())} / ${formatRate(conn.getBytesOut())} kb/s`
-                + ` (${formatRate(conn.getBytesFailed())}, ${formatRate(conn.getBufferedAmount())})`)
+                + ` (${formatRate(conn.getBytesFailed())}, ${formatRate(conn.getBufferedAmount())}, ${conn.getState()})`)
             conn.resetCounters()
         })
         console.info(`Total ${formatRate(totalIn)} / ${formatRate(totalOut)} kb/s (${formatRate(totalFailed)}, ${formatRate(totalBufferedAmount)})\n`)
