@@ -1,4 +1,3 @@
-#!/usr/bin/env ts-node
 import * as WebSocket from 'ws'
 import * as url from "url"
 

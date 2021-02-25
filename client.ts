@@ -1,4 +1,3 @@
-#!/usr/bin/env ts-node
 import * as nodeDataChannel from "node-datachannel"
 import * as WebSocket from "ws"
 import { DataChannel } from "node-datachannel"
