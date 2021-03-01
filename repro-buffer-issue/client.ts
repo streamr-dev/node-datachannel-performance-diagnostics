@@ -129,6 +129,10 @@ class PeerConnection {
         return this.lastState
     }
 
+    isOpen(): boolean {
+        return this.dc ? this.dc.isOpen() : false
+    }
+
     getBytesIn(): number {
         return this.bytesIn
     }
@@ -218,7 +222,7 @@ export default function startClient(id: string, wsUrl: string) {
             totalFailed += conn.getBytesFailed()
             totalBufferedAmount += conn.getBufferedAmount()
             console.info(`${conn.getLogId()} rate ${formatRate(conn.getBytesIn())} / ${formatRate(conn.getBytesOut())} kb/s`
-                + ` (${formatRate(conn.getBytesFailed())}, ${formatRate(conn.getBufferedAmount())}, ${conn.getState()})`)
+                + ` (${formatRate(conn.getBytesFailed())}, ${formatRate(conn.getBufferedAmount())}, ${conn.getState()}, ${conn.isOpen()})`)
             conn.resetCounters()
         })
         console.info(`Total ${formatRate(totalIn)} / ${formatRate(totalOut)} kb/s (${formatRate(totalFailed)}, ${formatRate(totalBufferedAmount)})\n`)
