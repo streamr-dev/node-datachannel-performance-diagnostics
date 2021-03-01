@@ -6,7 +6,7 @@ const ICE_SERVERS = ['stun:stun.l.google.com:19302']
 
 const BUFFER_LOW = 2 ** 20
 const BUFFER_HIGH = 2 ** 24
-const PACKAGE_SIZE = 600
+const PACKAGE_SIZE = 800
 const INTERVAL = 2
 
 function randomString(length: number): string {
