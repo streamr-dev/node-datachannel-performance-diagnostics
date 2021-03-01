@@ -220,7 +220,7 @@ export default function startClient(id: string, wsUrl: string) {
             totalFailed += conn.getBytesFailed()
             totalBufferedAmount += conn.getBufferedAmount()
             console.info(`${conn.getLogId()} rate ${formatRate(conn.getBytesIn())} / ${formatRate(conn.getBytesOut())} kb/s`
-                + ` (${formatRate(conn.getBytesFailed())}, ${formatRate(conn.getBufferedAmount())}, lastState=${conn.getState()}, isOpen=${conn.isOpen()}, isPaused=${conn.isPaused()})`)
+                + ` (${formatRate(conn.getBytesFailed())}, ${formatRate(conn.getBufferedAmount())}, state=${conn.getState()}, open=${conn.isOpen()}, paused=${conn.isPaused()})`)
             conn.resetCounters()
         })
         console.info(`Total ${formatRate(totalIn)} / ${formatRate(totalOut)} kb/s (${formatRate(totalFailed)}, ${formatRate(totalBufferedAmount)})\n`)
