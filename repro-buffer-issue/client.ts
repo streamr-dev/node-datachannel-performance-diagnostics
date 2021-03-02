@@ -227,7 +227,8 @@ export default function startClient(id: string, wsUrl: string) {
                 + ` (${formatRate(conn.getBytesFailed())}, ${formatRate(conn.getBufferedAmount())}, state=${conn.getState()}, open=${conn.isOpen()}, paused=${conn.isPaused()})`)
             conn.resetCounters()
         })
-        console.info(`Total ${formatRate(totalIn)} / ${formatRate(totalOut)} kb/s (${formatRate(totalFailed)}, ${formatRate(totalBufferedAmount)}, ${process.memoryUsage()})\n`)
+        const memoryUsage = process.memoryUsage()
+        console.info(`Total ${formatRate(totalIn)} / ${formatRate(totalOut)} kb/s (${formatRate(totalFailed)}, ${formatRate(totalBufferedAmount)}, ${memoryUsage.heapUsed} / ${memoryUsage.heapTotal})\n`)
     }, 1000)
 }
 
