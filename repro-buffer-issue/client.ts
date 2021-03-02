@@ -172,8 +172,8 @@ class PeerConnection {
 }
 
 export default function startClient(id: string, wsUrl: string) {
-    const connections: { [key: string]: PeerConnection } = {}
-    const ws = new WebSocket(`${wsUrl}?id=${id}`)
+    const connections: { [key: string]: PeerConnection } = {} // peerId => Rtc connection
+    const ws = new WebSocket(`${wsUrl}?id=${id}`) // connection to signaling server
 
     ws.on('open', () => {
         console.info("Connected to signaling server; waiting for further messages from signaling server...")
@@ -201,13 +201,17 @@ export default function startClient(id: string, wsUrl: string) {
         process.exit(1)
     })
 
-    setInterval(() => {
+    // Publish message to all neighbors
+    const publishFn = () => {
         const msg = randomString(PACKAGE_SIZE)
         Object.values(connections).forEach((conn) => {
             conn.publish(msg)
         })
-    }, INTERVAL)
+        setTimeout(publishFn, INTERVAL)
+    }
+    setTimeout(publishFn, INTERVAL)
 
+    // Print to console statistics
     setInterval(() => {
         let totalIn = 0
         let totalOut = 0
