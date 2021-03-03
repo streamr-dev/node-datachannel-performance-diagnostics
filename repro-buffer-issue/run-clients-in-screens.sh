@@ -1,16 +1,25 @@
 
 NUM=10
+WSURL='ws://localhost:8080/'
 
 if [ -z "$1" ]
   then
-    echo "No argument given, running default of ${NUM} clients"
+    echo "No first argument given, running default of ${NUM} clients"
   else
     NUM=$1
 fi
 
+if [ -z "$WS_URL" ]
+  then
+    echo "Environment variable WS_URL not set, starting with default WS_URL of ${WSURL}"
+  else
+    WSURL=$WS_URL
+fi
+
+
 for (( c=1; c<=$NUM; c++ ))
 do  
-   screen -S tsclient${c} -dm bash -c 'npx ts-node client.ts; exec sh'
+   screen -S tsclient${c} -dm bash -c 'WS_URL=${WSURL} npx ts-node client.ts; exec sh'
 done
 
 screen -ls
