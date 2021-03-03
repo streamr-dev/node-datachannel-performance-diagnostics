@@ -1,1 +1,1 @@
-tail -f logs/*.txt | grep -rni "HIGH"
+tail -f logs/*.txt | grep -P "HIGH"
