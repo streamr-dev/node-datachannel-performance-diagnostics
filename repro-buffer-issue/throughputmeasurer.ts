@@ -4,7 +4,7 @@ import { DataChannel } from "node-datachannel"
 
 const ICE_SERVERS = ['stun:stun.l.google.com:19302']
 
-const PACKAGE_SIZE = 800
+const PACKAGE_SIZE = 1000
 const BUFFER_LOW = PACKAGE_SIZE * 10  // 2 ** 20
 const BUFFER_HIGH = PACKAGE_SIZE * 10 // 2 ** 24
 
@@ -76,7 +76,8 @@ class PeerConnection {
             throw new Error('Already started!')
         }
         this.isActive = true
-        this.setUpDataChannel(this.connection.createDataChannel('generalDataChannel'))
+        this.dc = this.connection.createDataChannel('generalDataChannel')
+        this.setUpDataChannel(this.dc)
     }
 
     startAsPassive(): void {
@@ -84,7 +85,8 @@ class PeerConnection {
             throw new Error('Already started!')
         }
         this.connection.onDataChannel((dc) => {
-            this.setUpDataChannel(dc)
+            this.dc = dc
+            this.setUpDataChannel(this.dc)
             this.paused = false
         })
     }
@@ -113,11 +115,11 @@ class PeerConnection {
         }
         */
         while (this.dc.bufferedAmount() < BUFFER_HIGH) {
-        console.log(`Buffered amount in busy sending loop ${this.dc.bufferedAmount()}`)
+        //console.log(`Buffered amount in busy sending loop ${this.dc.bufferedAmount()}`)
         const success = this.dc.sendMessage(message)
         this.bytesOut += message.length
         }
-
+        console.log("busy sending loop exited, buf: " + this.dc.bufferedAmount())
         return true
     }
 
@@ -160,8 +162,8 @@ class PeerConnection {
     }
 
     private setUpDataChannel(dc: DataChannel): void {
-        this.dc = dc
-        dc.setBufferedAmountLowThreshold(BUFFER_LOW)
+       
+        dc.setBufferedAmountLowThreshold(PACKAGE_SIZE)
         dc.onOpen(() => {
             console.info(`${this.logId} DataChannel ${this.peerId} open`)
             if (this.isActive) {
@@ -178,7 +180,7 @@ class PeerConnection {
             console.log("Setting bufferedAmountLow callback as active")
             dc.onBufferedAmountLow(() => {
                 console.log("!!!! onBufferedAmountLow")
-                console.log(`${this.logId} DataChannel ${this.peerId} LOW buffer (${this.dc.bufferedAmount()})!`)
+                //console.log(`${this.logId} DataChannel ${this.peerId} LOW buffer (${this.dc.bufferedAmount()})!`)
                 //this.paused = false 
                 this.publish(this.message);
             })
