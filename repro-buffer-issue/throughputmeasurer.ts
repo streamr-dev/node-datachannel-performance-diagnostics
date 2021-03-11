@@ -4,11 +4,9 @@ import { DataChannel } from "node-datachannel"
 
 const ICE_SERVERS = ['stun:stun.l.google.com:19302']
 
-const PACKAGE_SIZE = 1000
-const BUFFER_LOW = PACKAGE_SIZE * 10  // 2 ** 20
-const BUFFER_HIGH = PACKAGE_SIZE * 10 // 2 ** 24
 
-const INTERVAL = 2
+const BYTES_TO_SEND = 1048576 * 100     // 100 megabytes
+
 
 function randomString(length: number): string {
     let result = ''
@@ -38,12 +36,19 @@ class PeerConnection {
     private bytesFailed = 0
     private message: string 
     private isActive = false
+    private BUFFER_LOW: number 
+    private BUFFER_HIGH: number
+
+    // key is the packet size
+    private stats: Map<number, {fistPacketAt: number, lastPacketAt: number, bytesReceived: number}> = new Map()
 
     constructor(selfId: string, peerId: string, signalingServerWs: WebSocket, packetSize: number) {
         this.selfId = selfId
         this.peerId = peerId
         this.logId = `${this.selfId}->${this.peerId}`
         this.message = randomString(packetSize)
+        this.BUFFER_LOW = packetSize
+        this.BUFFER_HIGH = packetSize * 10
 
         function sendRelay(data) {
             signalingServerWs.send(JSON.stringify({
@@ -114,7 +119,7 @@ class PeerConnection {
             return false
         }
         */
-        while (this.dc.bufferedAmount() < BUFFER_HIGH) {
+        while (this.dc.bufferedAmount() < this.BUFFER_HIGH) {
         //console.log(`Buffered amount in busy sending loop ${this.dc.bufferedAmount()}`)
         const success = this.dc.sendMessage(message)
         this.bytesOut += message.length
@@ -161,9 +166,25 @@ class PeerConnection {
         this.bytesFailed = 0
     }
 
+    getStatsAsString(): string {
+        let ret = "";
+        var keys = [...this.stats.keys()]
+        for (let i = 0; i < keys.length; i++) {
+            let packetSize = keys[i];    
+            let stat = this.stats.get(packetSize)
+            const timeSpent = stat.lastPacketAt - stat.fistPacketAt
+            
+            let bytesPerSecond = stat.bytesReceived / timeSpent * 1000
+
+            const kilobytesPerSecond = Math.round(bytesPerSecond / 1024) 
+            ret += packetSize + "\t" + kilobytesPerSecond + " kB/s \t" + (kilobytesPerSecond*8) + " kbit/s\n"
+          }
+        return ret
+    } 
+
     private setUpDataChannel(dc: DataChannel): void {
        
-        dc.setBufferedAmountLowThreshold(PACKAGE_SIZE)
+        dc.setBufferedAmountLowThreshold(this.BUFFER_LOW)
         dc.onOpen(() => {
             console.info(`${this.logId} DataChannel ${this.peerId} open`)
             if (this.isActive) {
@@ -186,14 +207,25 @@ class PeerConnection {
             })
         }
         dc.onMessage((msg) => {
+            if (!this.stats.has(msg.length)) {
+                this.stats.set(msg.length, {fistPacketAt: Date.now(), lastPacketAt: Date.now(), bytesReceived: msg.length})
+            }
+            else {
+                let stat = this.stats.get(msg.length);
+                stat.bytesReceived += msg.length;
+                stat.lastPacketAt = Date.now();
+                this.stats.set(msg.length, stat);
+            }
             this.bytesIn += msg.length
         })
         
     }
 }
 
-export default function startClient(id: string, wsUrl: string) {
-    const connections: { [key: string]: PeerConnection } = {} // peerId => Rtc connection
+const connections: { [key: string]: PeerConnection } = {} // peerId => Rtc connection
+
+export default function startClient(id: string, wsUrl: string, packetSize: number) {
+
     const ws = new WebSocket(`${wsUrl}?id=${id}`) // connection to signaling server
 
     ws.on('open', () => {
@@ -203,13 +235,13 @@ export default function startClient(id: string, wsUrl: string) {
         const msg = JSON.parse(rawMsg.toString())
         if (msg.type === 'connect') {
             console.info(`Connect message received from signaling server (target = ${msg.target}).`)
-            connections[msg.target] = new PeerConnection(id, msg.target, ws, PACKAGE_SIZE)
+            connections[msg.target] = new PeerConnection(id, msg.target, ws, packetSize)
             connections[msg.target].startAsActive()
         } else if (msg.type === 'relay') {
             console.info(`Relay message received signaling server (from=${msg.from}).`)
             if (!connections[msg.from]) {
                 console.info(`Creating passive connection for ${msg.from}.`)
-                connections[msg.from] = new PeerConnection(id, msg.from, ws, PACKAGE_SIZE)
+                connections[msg.from] = new PeerConnection(id, msg.from, ws, packetSize)
                 connections[msg.from].startAsPassive()
             }
             connections[msg.from].handleRemoteData(msg.data)
@@ -260,6 +292,24 @@ export default function startClient(id: string, wsUrl: string) {
     }, 1000)
 }
 
+function printStats() {
+    Object.values(connections).forEach((conn) => {
+        console.log("packetSize kB/s    kbit/s");
+        console.log(conn.getStatsAsString())
+    })
+}
+process.on('SIGINT', function() {
+    console.log('Caught interrupt signal');
+    printStats()
+
+    process.exit();
+});
+
 const WS_URL = process.env.WS_URL || "ws://localhost:8080/"
 const clientArgs = process.argv.slice(2)
-startClient(clientArgs.length > 0 ? clientArgs[0] : 'client-' + randomString(4), WS_URL)
+
+let packetSize = 800;
+if (clientArgs.length > 0) {
+    packetSize = parseInt(clientArgs[0]);
+}
+startClient('client-' + randomString(4), WS_URL, packetSize)
