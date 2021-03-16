@@ -42,13 +42,13 @@ class PeerConnection {
     // key is the packet size
     private stats: Map<number, {fistPacketAt: number, lastPacketAt: number, bytesReceived: number}> = new Map()
 
-    constructor(selfId: string, peerId: string, signalingServerWs: WebSocket, packetSize: number) {
+    constructor(selfId: string, peerId: string, signalingServerWs: WebSocket, packetSize: number, public isSender: boolean) {
         this.selfId = selfId
         this.peerId = peerId
         this.logId = `${this.selfId}->${this.peerId}`
         this.message = randomString(packetSize)
-        this.BUFFER_LOW = packetSize
-        this.BUFFER_HIGH = packetSize * 10
+        this.BUFFER_LOW = 2048		//packetSize
+        this.BUFFER_HIGH = 8192		//packetSize * 10
 
         function sendRelay(data) {
             signalingServerWs.send(JSON.stringify({
@@ -83,6 +83,8 @@ class PeerConnection {
         this.isActive = true
         this.dc = this.connection.createDataChannel('generalDataChannel')
         this.setUpDataChannel(this.dc)
+        if (this.isSender)
+                this.publish(this.message)
     }
 
     startAsPassive(): void {
@@ -93,6 +95,9 @@ class PeerConnection {
             this.dc = dc
             this.setUpDataChannel(this.dc)
             this.paused = false
+            if (this.isSender)
+                this.publish(this.message)
+            
         })
     }
 
@@ -187,7 +192,7 @@ class PeerConnection {
         dc.setBufferedAmountLowThreshold(this.BUFFER_LOW)
         dc.onOpen(() => {
             console.info(`${this.logId} DataChannel ${this.peerId} open`)
-            if (this.isActive) {
+            if (this.isSender) {
                 this.publish(this.message)
             }
         })
@@ -197,8 +202,8 @@ class PeerConnection {
         dc.onError((e) => {
             console.warn(`${this.logId} DataChannel ${this.peerId} error: ${e}`)
         })
-        if (this.isActive) {
-            console.log("Setting bufferedAmountLow callback as active")
+        if (this.isSender) {
+            console.log("Setting bufferedAmountLow callback as passive")
             dc.onBufferedAmountLow(() => {
                 console.log("!!!! onBufferedAmountLow")
                 //console.log(`${this.logId} DataChannel ${this.peerId} LOW buffer (${this.dc.bufferedAmount()})!`)
@@ -224,7 +229,7 @@ class PeerConnection {
 
 const connections: { [key: string]: PeerConnection } = {} // peerId => Rtc connection
 
-export default function startClient(id: string, wsUrl: string, packetSize: number) {
+export default function startClient(id: string, wsUrl: string, packetSize: number, isSender: boolean) {
 
     const ws = new WebSocket(`${wsUrl}?id=${id}`) // connection to signaling server
 
@@ -235,13 +240,13 @@ export default function startClient(id: string, wsUrl: string, packetSize: numbe
         const msg = JSON.parse(rawMsg.toString())
         if (msg.type === 'connect') {
             console.info(`Connect message received from signaling server (target = ${msg.target}).`)
-            connections[msg.target] = new PeerConnection(id, msg.target, ws, packetSize)
+            connections[msg.target] = new PeerConnection(id, msg.target, ws, packetSize, isSender)
             connections[msg.target].startAsActive()
         } else if (msg.type === 'relay') {
             console.info(`Relay message received signaling server (from=${msg.from}).`)
             if (!connections[msg.from]) {
                 console.info(`Creating passive connection for ${msg.from}.`)
-                connections[msg.from] = new PeerConnection(id, msg.from, ws, packetSize)
+                connections[msg.from] = new PeerConnection(id, msg.from, ws, packetSize, isSender)
                 connections[msg.from].startAsPassive()
             }
             connections[msg.from].handleRemoteData(msg.data)
@@ -293,23 +298,30 @@ export default function startClient(id: string, wsUrl: string, packetSize: numbe
 }
 
 function printStats() {
+    console.log("packetSize kB/s    kbit/s");
     Object.values(connections).forEach((conn) => {
-        console.log("packetSize kB/s    kbit/s");
         console.log(conn.getStatsAsString())
     })
 }
 process.on('SIGINT', function() {
     console.log('Caught interrupt signal');
+    
     printStats()
 
     process.exit();
 });
 
-const WS_URL = process.env.WS_URL || "ws://localhost:8080/"
+const WS_URL = process.env.WS_URL || "ws://95.216.76.238:8080/"
 const clientArgs = process.argv.slice(2)
 
 let packetSize = 800;
 if (clientArgs.length > 0) {
     packetSize = parseInt(clientArgs[0]);
 }
-startClient('client-' + randomString(4), WS_URL, packetSize)
+
+let isSender = false;
+if (clientArgs.length > 1) {
+    isSender = true;
+}
+
+startClient('client-' + randomString(4), WS_URL, packetSize, isSender)

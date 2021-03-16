@@ -46,7 +46,7 @@ wss.on('connection', (ws, req) => {
 
     // Connect new client to all existing clients (thereby leading to a complete graph)
     Object.entries(clients).forEach(([otherPeerId, otherPeerWs]) => {
-        const offering = Math.random() < 0.5
+        const offering = false //Math.random() < 0.5
         if (offering) {
             ws.send(JSON.stringify({
                 type: 'connect',
