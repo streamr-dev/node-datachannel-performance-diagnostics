@@ -177,7 +177,7 @@ class PeerConnection {
             let bytesPerSecond = stat.bytesReceived / timeSpent * 1000
 
             const kilobytesPerSecond = Math.round(bytesPerSecond / 1024) 
-            ret += packetSize + "\t" + kilobytesPerSecond + " kB/s \t" + (kilobytesPerSecond*8) + " kbit/s\n"
+            ret += packetSize + "\t" + kilobytesPerSecond + "\t" + (kilobytesPerSecond*8) + "\n"
           }
         return ret
     } 
