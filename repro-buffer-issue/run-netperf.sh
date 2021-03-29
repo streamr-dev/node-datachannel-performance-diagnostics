@@ -21,9 +21,9 @@ for (( c=1; c<${NUM_INTERFACES}; c+=2 ))
 			
 		virtualipserver=124.${bigcounter}.${smallcounter}.2
 		
-		sudo ip netns exec blue${c} iperf3 -s  & #-y c > ./iperfresults/${c}allout.txt 2>&1 &
+		sudo ip netns exec blue${c} netserver  & #-y c > ./iperfresults/${c}allout.txt 2>&1 &
 		sleep 1		
-		sudo ip netns exec blue$((c+1)) iperf3 -c $virtualipserver # -y c > ./iperfresults/$((c+1))allout.txt 2>&1 &
+		sudo ip netns exec blue$((c+1)) netperf -H $virtualipserver # -y c > ./iperfresults/$((c+1))allout.txt 2>&1 &
 		
 				
 		#Update counters for ip address generation

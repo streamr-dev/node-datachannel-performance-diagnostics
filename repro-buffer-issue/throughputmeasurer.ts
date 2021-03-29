@@ -47,8 +47,8 @@ class PeerConnection {
         this.peerId = peerId
         this.logId = `${this.selfId}->${this.peerId}`
         this.message = randomString(packetSize)
-        this.BUFFER_LOW = 2048		//packetSize
-        this.BUFFER_HIGH = 8192		//packetSize * 10
+        this.BUFFER_LOW = 262144		//packetSize
+        this.BUFFER_HIGH = 1048576		//packetSize * 10
 
         function sendRelay(data) {
             signalingServerWs.send(JSON.stringify({
@@ -83,8 +83,8 @@ class PeerConnection {
         this.isActive = true
         this.dc = this.connection.createDataChannel('generalDataChannel')
         this.setUpDataChannel(this.dc)
-        if (this.isSender)
-                this.publish(this.message)
+        //if (this.isSender)
+        //        this.publish(this.message)
     }
 
     startAsPassive(): void {
@@ -129,7 +129,7 @@ class PeerConnection {
         const success = this.dc.sendMessage(message)
         this.bytesOut += message.length
         }
-        console.log("busy sending loop exited, buf: " + this.dc.bufferedAmount())
+        //console.log("busy sending loop exited, buf: " + this.dc.bufferedAmount())
         return true
     }
 
@@ -205,7 +205,7 @@ class PeerConnection {
         if (this.isSender) {
             console.log("Setting bufferedAmountLow callback as passive")
             dc.onBufferedAmountLow(() => {
-                console.log("!!!! onBufferedAmountLow")
+                //console.log("!!!! onBufferedAmountLow")
                 //console.log(`${this.logId} DataChannel ${this.peerId} LOW buffer (${this.dc.bufferedAmount()})!`)
                 //this.paused = false 
                 this.publish(this.message);
@@ -287,24 +287,24 @@ export default function startClient(id: string, wsUrl: string, packetSize: numbe
             totalFailed += conn.getBytesFailed()
             totalBufferedAmount += conn.getBufferedAmount()
 
-            console.info(`${conn.getLogId()} rate ${formatRate(conn.getBytesIn(), timeElapsed )} / ${formatRate(conn.getBytesOut(), timeElapsed)} kB/s`
-                + ` (${formatRate(conn.getBytesFailed(), timeElapsed)}, ${formatRate(conn.getBufferedAmount(), timeElapsed)}, state=${conn.getState()}, open=${conn.isOpen()}, paused=${conn.isPaused()})`)
+            //console.info(`${conn.getLogId()} rate ${formatRate(conn.getBytesIn(), timeElapsed )} / ${formatRate(conn.getBytesOut(), timeElapsed)} kB/s`
+            //    + ` (${formatRate(conn.getBytesFailed(), timeElapsed)}, ${formatRate(conn.getBufferedAmount(), timeElapsed)}, state=${conn.getState()}, open=${conn.isOpen()}, paused=${conn.isPaused()})`)
             conn.resetCounters()
         })
         const memoryUsage = process.memoryUsage()
-        console.info(`Total ${formatRate(totalIn, timeElapsed)} / ${formatRate(totalOut, timeElapsed)} kB/s (${totalFailed/1024}, ${totalBufferedAmount/1024}, ${memoryUsage.heapUsed} / ${memoryUsage.heapTotal})\n`)
+        //console.info(`Total ${formatRate(totalIn, timeElapsed)} / ${formatRate(totalOut, timeElapsed)} kB/s (${totalFailed/1024}, ${totalBufferedAmount/1024}, ${memoryUsage.heapUsed} / ${memoryUsage.heapTotal})\n`)
         lastIntervalTime = Date.now();
     }, 1000)
 }
 
 function printStats() {
-    console.log("packetSize kB/s    kbit/s");
+    console.error("packetSize kB/s    kbit/s");
     Object.values(connections).forEach((conn) => {
-        console.log(conn.getStatsAsString())
+        console.error(conn.getStatsAsString())
     })
 }
 process.on('SIGINT', function() {
-    console.log('Caught interrupt signal');
+    //console.log('Caught interrupt signal');
     
     printStats()
 

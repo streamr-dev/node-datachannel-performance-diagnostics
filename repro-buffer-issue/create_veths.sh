@@ -11,9 +11,9 @@
 
 
 NUM_INTERFACES=3
-ULSPEED=100000 
-DLSPEED=100000
-HALFLATENCY=25
+ULSPEED=10000000 
+DLSPEED=100
+ONEWAYDELAY=2
 
 smallcounter=1
 bigcounter=124
@@ -50,7 +50,7 @@ for (( c=1; c<${NUM_INTERFACES}; c++ ))
 		sudo ip netns exec blue${c} tc qdisc add dev vethvirtual${c} root handle 1: htb default 30
 		sudo ip netns exec blue${c} tc class add dev vethvirtual${c} parent 1: classid 1:1 htb rate ${DLSPEED}kbit
 		sudo ip netns exec blue${c} tc class add dev vethvirtual${c} parent 1: classid 1:2 htb rate ${ULSPEED}kbit
-		sudo ip netns exec blue${c} tc qdisc add dev vethvirtual${c} parent 1:2 handle 12 netem delay ${HALFLATENCY}ms
+		sudo ip netns exec blue${c} tc qdisc add dev vethvirtual${c} parent 1:2 handle 12 netem delay ${ONEWAYDELAY}ms
 		sudo ip netns exec blue${c} tc filter add dev vethvirtual${c} protocol ip parent 1:0 prio 1 u32 match ip dst ${virtualip}/32 flowid 1:1
 		sudo ip netns exec blue${c} tc filter add dev vethvirtual${c} protocol ip parent 1:0 prio 1 u32 match ip src ${virtualip}/32 flowid 1:2
 		
