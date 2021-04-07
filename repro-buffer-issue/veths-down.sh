@@ -2,7 +2,7 @@
 
 NUM_INTERFACES=2
 
-pkill node 
+#pkill node 
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]

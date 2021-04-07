@@ -56,32 +56,23 @@ class PeerConnection {
                 to: peerId,
                 data
             }))
-        console.log(JSON.stringify(data))
         }
         this.connection = new nodeDataChannel.PeerConnection(selfId, { iceServers: ICE_SERVERS })
         this.connection.onStateChange((state) => {
-            console.log(selfId + " onStateChange() "+state)
             this.lastState = state
         })
         // TODO: connection.onGatheringStateChange
         this.connection.onLocalDescription((description, type) => {
-            console.log(selfId + " onLocalDescription()")
             sendRelay({
                 type,
                 description
             })
         })
         this.connection.onLocalCandidate((candidate, mid) => {
-            console.log(selfId + " onLocalCandidate() "+ JSON.stringify(candidate))
-            if (candidate.indexOf("124.124") != -1) {
-             sendRelay({
+            sendRelay({
                 candidate,
                 mid
-             })
-            }
-            else
-                console.log("not sending a non-host candidate")
-            
+            })
         })
     }
 
@@ -111,15 +102,10 @@ class PeerConnection {
     }
 
     handleRemoteData(data: any) {
-        console.log("handleRemoteData()")
         if (data.candidate) {
-             console.log("calling addRemoteCandidate() with: "+ JSON.stringify(data.candidate))
             this.connection.addRemoteCandidate(data.candidate, data.mid)
-            console.log("addRemoteCandidate() called with: "+ JSON.stringify(data.candidate))
         } else if (data.type) {
-            console.log("calling setRemoteDescription() with " + JSON.stringify(data.description))
             this.connection.setRemoteDescription(data.description, data.type)
-            console.log("setRemoteDescription() called")
         } else {
             console.warn(`${this.logId} unrecognized RTC message: ${JSON.stringify(data)}`)
         }
@@ -196,7 +182,9 @@ class PeerConnection {
             let bytesPerSecond = stat.bytesReceived / timeSpent * 1000
 
             const kilobytesPerSecond = Math.round(bytesPerSecond / 1024) 
+            const megabitsPerSecond = kilobytesPerSecond * 8 / 1024;
             ret += packetSize + "\t" + kilobytesPerSecond + "\t" + (kilobytesPerSecond*8) + "\n"
+            ret += megabitsPerSecond.toFixed(2)
           }
         return ret
     } 
@@ -217,7 +205,7 @@ class PeerConnection {
             console.warn(`${this.logId} DataChannel ${this.peerId} error: ${e}`)
         })
         if (this.isSender) {
-            console.log("Setting bufferedAmountLow callback as passive")
+            //console.log("Setting bufferedAmountLow callback as passive")
             dc.onBufferedAmountLow(() => {
                 //console.log("!!!! onBufferedAmountLow")
                 //console.log(`${this.logId} DataChannel ${this.peerId} LOW buffer (${this.dc.bufferedAmount()})!`)
@@ -258,7 +246,6 @@ export default function startClient(id: string, wsUrl: string, packetSize: numbe
             connections[msg.target].startAsActive()
         } else if (msg.type === 'relay') {
             console.info(`Relay message received signaling server (from=${msg.from}).`)
-            console.log(rawMsg.toString())
             if (!connections[msg.from]) {
                 console.info(`Creating passive connection for ${msg.from}.`)
                 connections[msg.from] = new PeerConnection(id, msg.from, ws, packetSize, isSender)
@@ -313,20 +300,20 @@ export default function startClient(id: string, wsUrl: string, packetSize: numbe
 }
 
 function printStats() {
-    console.error("packetSize kB/s    kbit/s");
+    console.log("packetSize kB/s    kbit/s");
     Object.values(connections).forEach((conn) => {
-        console.error(conn.getStatsAsString())
+        console.log(conn.getStatsAsString())
     })
 }
 process.on('SIGINT', function() {
-    //console.log('Caught interrupt signal');
+    console.log('Caught interrupt signal');
     
     printStats()
 
     process.exit();
 });
 
-const WS_URL = process.env.WS_URL || "ws://95.216.15.80:8080/"
+const WS_URL = process.env.WS_URL || "ws://95.216.76.238:8080/"
 const clientArgs = process.argv.slice(2)
 
 let packetSize = 800;
@@ -338,5 +325,5 @@ let isSender = false;
 if (clientArgs.length > 1) {
     isSender = true;
 }
-
+console.log("starting client");
 startClient('client-' + randomString(4), WS_URL, packetSize, isSender)
