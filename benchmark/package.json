@@ -8,12 +8,13 @@
     "ndct-server": "signaling-server.ts"
   },
   "scripts": {
+    "start": "./run-measurements-at-varying-latencies.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
-    "@streamr/lnem": "^1.2.0",
+    "@streamr/lnem": "latest",
     "@types/node": "^14.14.33",
     "@types/ws": "^7.4.0",
     "node-datachannel": "0.0.28-dev",
