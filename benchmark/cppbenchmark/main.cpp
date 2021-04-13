@@ -2,6 +2,7 @@
 #include <string>
 #include <cstdlib>
 #include <thread>
+#include <csignal>
 #include "testclient.h"
 #include "helpers.h"
 
