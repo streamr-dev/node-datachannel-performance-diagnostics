@@ -5,30 +5,14 @@ quarterdelay=$1
 msgsize=262144
 
 log="./log.csv"
+mdlog="./log.md"
 lnemup="./node_modules/@streamr/lnem/bin/lnem-up"
 lnemdown="./node_modules/@streamr/lnem/bin/lnem-down"
 
-#echo "" >> $log
-#echo `date` >> $log
-#echo "Message size(bytes)	ping RTT (ms)	Netperf TCP throughput (Mbit/s)	node-datachannel throughput (Mbit/s)" >> $log
-
 $lnemup -n 2 -l $quarterdelay
 
-#iperf2 
-
-#sudo ip netns exec blue1 /root/iperf-2.0.7/src/iperf --sctp -w 5M -s &
-#sudo ip netns exec blue2 /root/iperf-2.0.7/src/iperf  --sctp -w 5M -l 8952 -t 30 -c 10.240.1.2
-#pkill iperf
-
-#iperf3
-
-#sudo ip netns exec blue1 /usr/local/bin/iperf3 -s &
-#sudo ip netns exec blue2 /usr/local/bin/iperf3  --sctp -w 5M -l 8952 -t 30 -c 10.240.1.2
-#sudo pkill iperf3
-
 sudo ip netns exec blue1 netserver -4 &
-#sudo ip netns exec blue2 netperf -t TCP_STREAM -4 -H 10.240.1.2
-#sudo ip netns exec blue2 netperf -t SCTP_STREAM -4 -H 10.240.1.2
+
 netperfthroughput=`sudo ip netns exec blue2 netperf -t TCP_STREAM -4 -H 10.240.1.2 | tail -n1 | awk 'NF>1{print $NF}'`
 
 sudo pkill netserver
@@ -50,10 +34,15 @@ sleep 2
 
 throughput=`tail -n 1 tmplog.txt | head -c -1`
 
+calc() { awk "BEGIN{print $*}"; }
+
+percent=`calc $throughput/$netperfthroughput*100`
+
 rm tmplog.txt
 pingtime=`sudo ip netns exec blue2 ping -c 5 10.240.1.2 | head -n5   |tail -n1 | grep -oP ".*time=\K\d+"`
 
 
 $lnemdown -n 2
 
-echo "$msgsize	$pingtime	$netperfthroughput	$throughput" >> $log
+echo "$msgsize	$pingtime	$netperfthroughput	$throughput	$percent" >> $log
+echo "| $msgsize            | $pingtime     | $netperfthroughput              | $throughput                          | $percent                  |" >> $mdlog

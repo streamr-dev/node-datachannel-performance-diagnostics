@@ -17,7 +17,7 @@ The script then measures the RTT between the namespaces using PING, and TCP thro
 throughputmeasurer.ts as a server in one namespace and as a client in the other. The throughputmeasurer.ts client 
 sends data to the server using the node-datachannel library for 30 seconds. The throughputmeasurer.ts server records the amount of data it has received 
 along with times arrival time of the first packet and the lastest packet it has received, and upon being killed, prints out the throughput
-calculated from this data. At the end, the "run-measurement-at-latency.sh" script outputs the RTT, netperf and node-datachannel results to the log.csv file and destroys the emulated network namespaces.
+calculated from this data. At the end, the "run-measurement-at-latency.sh" script outputs the RTT, netperf and node-datachannel results to the log.csv and log.md files and destroys the emulated network namespaces.
 
 ## Manual installation and usage on a physical Linux machine or a VM
 
@@ -85,13 +85,13 @@ Here are some results we got during our initial testing.
 
 | Message size(bytes) | ping RTT (ms) | Netperf TCP throughput (Mbit/s) | node-datachannel throughput (Mbit/s) | Percent of TCP throughput |
 |---------------------|---------------|---------------------------------|--------------------------------------|---------------------------|
-| 262144              | 0             | 12373.40                        | 252.32                               | 2.039213151
-| 262144	          | 12	          | 2011.22	                        | 210.66                               | 10.47423952
-| 262144	          | 20            | 1203.67	                        | 203.54                               | 16.9099504
-| 262144	          | 52            | 455.76	                        | 97.91                                | 21.48279796
-| 262144	          | 100           | 227.90	                        | 55.45                                | 24.33084686  
-| 262144	          | 200           | 104.16	                        | 13.60                                | 13.05683564 
-| 262144              | 500           | 29.74	                        | 12.18                                | 40.95494284
+| 262144              | 0             | 12373.40                        | 252.32                               | 2.039213151               |
+| 262144	          | 12	          | 2011.22	                        | 210.66                               | 10.47423952               |
+| 262144	          | 20            | 1203.67	                        | 203.54                               | 16.9099504                | 
+| 262144	          | 52            | 455.76	                        | 97.91                                | 21.48279796               | 
+| 262144	          | 100           | 227.90	                        | 55.45                                | 24.33084686               |  
+| 262144	          | 200           | 104.16	                        | 13.60                                | 13.05683564               |
+| 262144              | 500           | 29.74	                        | 12.18                                | 40.95494284               |  
 
 
 <!--
