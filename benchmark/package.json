@@ -9,6 +9,9 @@
   },
   "scripts": {
     "start": "./run-measurements-at-varying-latencies.sh",
+    "init-cpp-benchmark": "./init-cpp-benchmark.sh",
+    "rebuild-cpp-benchmark": "./rebuild-cpp-benchmark.sh",
+    "start-cpp-benchmark": "./run-cpp-measurements-at-varying-latencies.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

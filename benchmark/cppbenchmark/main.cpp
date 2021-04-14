@@ -40,7 +40,10 @@ int main(int argc, char **argv)
     if (std::getenv("WS_URL"))
         {
         wsUrl = std::getenv("WS_URL");
+        cout << "env variable got";
         }
+    else
+        cout << "env variable not got";
     
         
     testClient = new TestClient();

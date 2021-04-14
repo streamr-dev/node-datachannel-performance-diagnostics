@@ -336,6 +336,8 @@ string Peer::getStatsAsString()
         ret += to_string(kilobytesPerSecond*8);
         ret += "    ";
         ret += to_string(megabitsPerSecond);
+        ret += "\n";
+        ret += to_string(megabitsPerSecond);
         }
     //cout << "ret: " << ret << endl;
         

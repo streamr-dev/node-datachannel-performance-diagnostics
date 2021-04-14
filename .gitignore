@@ -3,3 +3,7 @@
 *iperfresults/*
 *.vagrant
 *libdatachannel
+*cpplog.csv
+*cpplog.md
+*log.csv
+*log.md
