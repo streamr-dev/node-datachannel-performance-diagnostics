@@ -76,6 +76,9 @@ Vagrant.configure("2") do |config|
      apt install -y iproute2
      apt install -y net-tools
      apt install -y netperf
+     apt install -y build-essential
+     apt install -y cmake
+     apt install -y gnutls-dev
      sysctl -w net.ipv4.ip_forward=1
      sysctl -p /etc/sysctl.conf
      su - vagrant -c "cd && git clone https://github.com/streamr-dev/node-datachannel-performance-diagnostics.git"
