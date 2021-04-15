@@ -135,7 +135,7 @@ between node-datachannel and libdatachannel.
 
 ### Libdatachannel (Ubuntu 20.04 on a physical machine)
 
-| Message size(bytes) | ping RTT (ms) | Netperf TCP throughput (Mbit/s) | node-datachannel throughput (Mbit/s) | Percent of TCP throughput |
+| Message size(bytes) | ping RTT (ms) | Netperf TCP throughput (Mbit/s) | libdatachannel throughput (Mbit/s)   | Percent of TCP throughput |
 |---------------------|---------------|---------------------------------|--------------------------------------|---------------------------|
 | 262144              | 0             | 13919.38                        | 441.363937                           | 3.17086                   |
 | 262144              | 12            | 2040.04                         | 273.335435                           | 13.3985                   |
