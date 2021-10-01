@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Runs a node-datachannel throughput measurement at a one-way latency given as the 
+# Runs a node-datachannel throughput measurement at a one-way latency given as the
 # first command line argument. If the socond command line argument is cpp, run the cpp benchmark
 
 quarterdelay=$1
-msgsize=262144
+msgsize=65535
 
 if [[ "$2" == "cpp" ]]; then
    measurer="./libdatachannel/build/examples/cppbenchmark/multi-node-benchmark"
@@ -21,9 +21,12 @@ lnemdown="./node_modules/@streamr/lnem/bin/lnem-down"
 
 $lnemup -n 2 -l $quarterdelay
 
+sudo sysctl -w net.core.rmem_max=67108864
+sudo sysctl -w net.core.rmem_max=67108864
+
 sudo ip netns exec blue1 netserver -4 &
 
-netperfthroughput=`sudo ip netns exec blue2 netperf -t TCP_STREAM -4 -H 10.240.1.2 | tail -n1 | awk 'NF>1{print $NF}'`
+netperfthroughput=`sudo ip netns exec blue2 netperf -t TCP_STREAM -4 -H 10.240.1.2 -- -s 64M -S 64M | tail -n1 | awk 'NF>1{print $NF}'`
 
 sudo pkill netserver
 sudo pkill netperf
@@ -36,7 +39,7 @@ WS_URL="ws://127.0.0.1:8080" ip netns exec blue1 $measurer >tmplog.txt &
 pid=$!
 sleep 1
 echo "Starting sender"
-WS_URL="ws://10.240.1.2:8080" timeout 30 ip netns exec blue2 $measurer 262144 true
+WS_URL="ws://10.240.1.2:8080" timeout 60 ip netns exec blue2 $measurer $msgsize true
 echo "killing receiver"
 kill -2 $pid
 echo "killing signalling server"
@@ -51,7 +54,7 @@ calc() { awk "BEGIN{print $*}"; }
 percent=`calc $throughput/$netperfthroughput*100`
 
 rm tmplog.txt
-pingtime=`sudo ip netns exec blue2 ping -c 5 10.240.1.2 | head -n5   |tail -n1 | grep -oP ".*time=\K\d+"`
+pingtime=`sudo ip netns exec blue2 ping -c 5 10.240.1.2 | head -n5 | tail -n1 | grep -oP ".*time=\K\d+"`
 
 
 $lnemdown -n 2
