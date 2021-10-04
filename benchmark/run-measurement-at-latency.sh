@@ -22,7 +22,7 @@ lnemdown="./node_modules/@streamr/lnem/bin/lnem-down"
 $lnemup -n 2 -l $quarterdelay
 
 sudo sysctl -w net.core.rmem_max=67108864
-sudo sysctl -w net.core.rmem_max=67108864
+sudo sysctl -w net.core.wmem_max=67108864
 
 sudo ip netns exec blue1 netserver -4 &
 
