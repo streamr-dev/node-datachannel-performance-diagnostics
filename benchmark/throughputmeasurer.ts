@@ -2,12 +2,6 @@ import * as nodeDataChannel from "node-datachannel"
 import * as WebSocket from "ws"
 import { DataChannel } from "node-datachannel"
 
-const ICE_SERVERS = ['stun:stun.l.google.com:19302']
-
-
-const BYTES_TO_SEND = 1048576 * 100     // 100 megabytes
-
-
 function randomString(length: number): string {
     let result = ''
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -34,9 +28,9 @@ class PeerConnection {
     private bytesIn = 0
     private bytesOut = 0
     private bytesFailed = 0
-    private message: string 
+    private message: string
     private isActive = false
-    private BUFFER_LOW: number 
+    private BUFFER_LOW: number
     private BUFFER_HIGH: number
 
     // key is the packet size
@@ -57,7 +51,17 @@ class PeerConnection {
                 data
             }))
         }
-        this.connection = new nodeDataChannel.PeerConnection(selfId, { iceServers: ICE_SERVERS })
+
+        const sctpSettings = {
+            recvBufferSize: 64 * 1024 * 1024,
+            sendBufferSize: 64 * 1024 * 1024
+        }
+        nodeDataChannel.setSctpSettings(sctpSettings)
+
+        const config = {
+            iceServers: []
+        }
+        this.connection = new nodeDataChannel.PeerConnection(selfId, config)
         this.connection.onStateChange((state) => {
             this.lastState = state
         })
@@ -97,7 +101,7 @@ class PeerConnection {
             this.paused = false
             if (this.isSender)
                 this.publish(this.message)
-            
+
         })
     }
 
@@ -175,22 +179,22 @@ class PeerConnection {
         let ret = "";
         var keys = [...this.stats.keys()]
         for (let i = 0; i < keys.length; i++) {
-            let packetSize = keys[i];    
+            let packetSize = keys[i];
             let stat = this.stats.get(packetSize)
             const timeSpent = stat.lastPacketAt - stat.fistPacketAt
-            
+
             let bytesPerSecond = stat.bytesReceived / timeSpent * 1000
 
-            const kilobytesPerSecond = Math.round(bytesPerSecond / 1024) 
+            const kilobytesPerSecond = Math.round(bytesPerSecond / 1024)
             const megabitsPerSecond = kilobytesPerSecond * 8 / 1024;
             ret += packetSize + "\t" + kilobytesPerSecond + "\t" + (kilobytesPerSecond*8) + "\n"
             ret += megabitsPerSecond.toFixed(2)
           }
         return ret
-    } 
+    }
 
     private setUpDataChannel(dc: DataChannel): void {
-       
+
         dc.setBufferedAmountLowThreshold(this.BUFFER_LOW)
         dc.onOpen(() => {
             console.info(`${this.logId} DataChannel ${this.peerId} open`)
@@ -209,7 +213,7 @@ class PeerConnection {
             dc.onBufferedAmountLow(() => {
                 //console.log("!!!! onBufferedAmountLow")
                 //console.log(`${this.logId} DataChannel ${this.peerId} LOW buffer (${this.dc.bufferedAmount()})!`)
-                //this.paused = false 
+                //this.paused = false
                 this.publish(this.message);
             })
         }
@@ -225,7 +229,7 @@ class PeerConnection {
             }
             this.bytesIn += msg.length
         })
-        
+
     }
 }
 
@@ -280,8 +284,8 @@ export default function startClient(id: string, wsUrl: string, packetSize: numbe
         let totalIn = 0
         let totalOut = 0
         let totalFailed = 0
-        let totalBufferedAmount = 0   
-        let timeElapsed = Date.now() - lastIntervalTime     
+        let totalBufferedAmount = 0
+        let timeElapsed = Date.now() - lastIntervalTime
 
         Object.values(connections).forEach((conn) => {
             totalIn += conn.getBytesIn()
@@ -307,7 +311,7 @@ function printStats() {
 }
 process.on('SIGINT', function() {
     console.log('Caught interrupt signal');
-    
+
     printStats()
 
     process.exit();
