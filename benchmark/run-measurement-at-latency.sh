@@ -21,12 +21,9 @@ lnemdown="./node_modules/@streamr/lnem/bin/lnem-down"
 
 $lnemup -n 2 -l $quarterdelay
 
-sudo sysctl -w net.core.rmem_max=67108864
-sudo sysctl -w net.core.wmem_max=67108864
-
 sudo ip netns exec blue1 netserver -4 &
 
-netperfthroughput=`sudo ip netns exec blue2 netperf -t TCP_STREAM -4 -H 10.240.1.2 -- -s 64M -S 64M | tail -n1 | awk 'NF>1{print $NF}'`
+netperfthroughput=`sudo ip netns exec blue2 netperf -t TCP_STREAM -4 -H 10.240.1.2 -- | tail -n1 | awk 'NF>1{print $NF}'`
 
 sudo pkill netserver
 sudo pkill netperf
